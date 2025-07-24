@@ -1,0 +1,77 @@
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('img.secure_qr_img').forEach(img => {
+    const address = img.dataset.address;
+    const logoUrl = img.dataset.logo;
+    const size    = parseInt(img.dataset.size, 10) || 200;
+
+    // 1) Geramos um QR MAIOR sem padding para facilitar o recorte
+    const baseSize = size * 4; // 4x para termos resolução para recortar
+    const qrCanvas = document.createElement('canvas');
+    new QRious({
+      element: qrCanvas,
+      value: address,
+      size: baseSize,
+      level: 'H',
+      padding: 0,          // <— CRÍTICO: remove padding que varia
+      background: '#ffffff',
+      foreground: '#000000'
+    });
+
+    // 2) Descobrir bounding-box de pixels pretos
+    const ctx = qrCanvas.getContext('2d');
+    const { width: w, height: h } = qrCanvas;
+    const data = ctx.getImageData(0, 0, w, h).data;
+
+    let minX = w, minY = h, maxX = 0, maxY = 0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        // Considera "preto" se canal R,G ou B < 50 (mais rígido que antes)
+        if (data[i] < 50 || data[i+1] < 50 || data[i+2] < 50) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (minX > maxX || minY > maxY) { // fallback extremo
+      minX = 0; minY = 0; maxX = w - 1; maxY = h - 1;
+    }
+
+    const cropW = maxX - minX + 1;
+    const cropH = maxY - minY + 1;
+
+    // 3) Canvas final exatamente size x size
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width  = size;
+    finalCanvas.height = size;
+    const fctx = finalCanvas.getContext('2d');
+
+    // Fundo branco
+    fctx.fillStyle = '#ffffff';
+    fctx.fillRect(0, 0, size, size);
+
+    // Desenha o QR recortado ocupando 100%
+    fctx.drawImage(qrCanvas, minX, minY, cropW, cropH, 0, 0, size, size);
+
+    // 4) Logo central
+    if (logoUrl) {
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      logoImg.onload = () => {
+        const logoTarget = size / 3;  // 1/3 do QR
+        const scale = Math.max(logoImg.width, logoImg.height) / logoTarget;
+        const lw = logoImg.width  / scale;
+        const lh = logoImg.height / scale;
+        const dx = (size - lw) / 2;
+        const dy = (size - lh) / 2;
+        fctx.drawImage(logoImg, dx, dy, lw, lh);
+        img.src = finalCanvas.toDataURL('image/png');
+      };
+      logoImg.src = logoUrl;
+    } else {
+      img.src = finalCanvas.toDataURL('image/png');
+    }
+  });
+});
