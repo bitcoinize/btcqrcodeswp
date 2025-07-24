@@ -1,0 +1,56 @@
+/* Container geral opcional: coloque seus shortcodes dentro de <div class="btcqr-grid"> ... </div> */
+.btcqr-grid{
+  max-width:700px;     /* largura máxima no desktop */
+  margin:0 auto;
+  /* se quiser limpar floats automaticamente */
+}
+.btcqr-grid::after{
+  content:"";
+  display:block;
+  clear:both;
+}
+
+/* Cada bloco de QR */
+.btcqr-wrap{
+  box-sizing:border-box;
+  float:left;
+  width:33.333%;
+  padding:0 20px 25px;   /* 20px lados, 25px embaixo */
+}
+
+/* Imagem do QR */
+.btcqr-img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-width:100%;
+  margin:0 auto;
+}
+
+/* Caixa do label */
+.btcqr-label{
+  background:rgba(0,0,0,0.05);
+  padding:5px;
+  margin-top:5px;
+  text-align:center;
+  word-break:break-all;
+  border-radius:5px;
+  font-size:14px;
+  line-height:1.35;
+}
+.btcqr-type{
+  font-weight:600;
+  margin-bottom:3px;
+}
+.btcqr-address{
+  word-break:break-all;
+}
+
+/* ===== Mobile < 700px ===== */
+@media (max-width:700px){
+  .btcqr-wrap{
+    width:100%;
+    float:none;
+    padding:0 25px 25px;   /* 25px lados em mobile */
+  }
+}
